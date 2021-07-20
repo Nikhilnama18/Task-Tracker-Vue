@@ -1,0 +1,22 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "text": "Sports Event",
+      "day": "July 20 ,2021",
+      "reminder": true
+    },
+    {
+      "id": 3,
+      "text": "Cultural Event",
+      "day": "July 25 ,2021",
+      "reminder": true
+    },
+    {
+      "text": "Cricket",
+      "day": "10Am today",
+      "reminder": false,
+      "id": 5
+    }
+  ]
+}

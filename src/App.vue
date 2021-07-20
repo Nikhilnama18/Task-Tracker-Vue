@@ -1,12 +1,13 @@
 <template>
   <div class="container">
     <Header @showAddTask="showAddTask" title="Task Tracker" />
-    <CreateTask @create-task="pushTask" v-if="showCreateTask"  />
+    <CreateTask @create-task="pushTask" v-if="showCreateTask" />
     <Tasks
       @toggle-reminder="toggleReminder"
       @delete-task="deleteTask"
       :tasks="tasks"
     />
+    <Footer />
   </div>
 </template>
 
@@ -14,6 +15,7 @@
 import Header from "./components/Header.vue";
 import Tasks from "./components/Tasks.vue";
 import CreateTask from "./components/CreateTask.vue";
+import Footer from "./components/Footer.vue";
 
 export default {
   name: "App",
@@ -24,49 +26,68 @@ export default {
     };
   },
   methods: {
-    deleteTask(id) {
+    async deleteTask(id) {
       if (confirm("Are you Sure?")) {
-        this.tasks = this.tasks.filter((task) => task.id !== id);
+        const res = await fetch(`api/tasks/${id}`, {
+          method: "DELETE",
+        });
+        res.status === 200
+          ? (this.tasks = this.tasks.filter((task) => task.id !== id))
+          : alert("Error Deleting Task");
       }
     },
-    toggleReminder(id) {
+    async toggleReminder(id) {
+      const taskToToggle = await this.fetchTask(id);
+      const updTask = { ...taskToToggle, reminder: !taskToToggle.reminder };
+      const res = await fetch(`api/tasks/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-type": "application/json",
+        },
+        body: await JSON.stringify(updTask),
+      });
+      const data = await res.json();
       this.tasks = this.tasks.map((task) =>
-        task.id === id ? { ...task, reminder: !task.reminder } : task
+        task.id === id ? { ...task, reminder: data.reminder } : task
       );
     },
-    pushTask(task) {
-      this.tasks.push({ id: this.tasks.length + 1, ...task });
+
+    async pushTask(task) {
+      const res = await fetch(`api/tasks`, {
+        method: "POST",
+        headers: {
+          "Content-type": "application/json",
+        },
+        body: JSON.stringify(task),
+      });
+      const data = await res.json();
+      this.tasks.push({ id: this.tasks.length + 1, ...task, data });
     },
+
     showAddTask() {
       this.showCreateTask = !this.showCreateTask;
+    },
+
+    async fetchTasks() {
+      const res = await fetch(`api/tasks`);
+      const data = await res.json();
+      return data;
+    },
+
+    async fetchTask(id) {
+      const res = await fetch(`api/tasks/${id}`);
+      const data = await res.json();
+      return data;
     },
   },
   components: {
     Header,
     Tasks,
     CreateTask,
+    Footer,
   },
-  created() {
-    this.tasks = [
-      {
-        id: 1,
-        text: "Sports Event",
-        day: "July 20 ,2021",
-        reminder: true,
-      },
-      {
-        id: 2,
-        text: "Coding Event",
-        day: "July 22 ,2021",
-        reminder: true,
-      },
-      {
-        id: 3,
-        text: "Cultural Event",
-        day: "July 25 ,2021",
-        reminder: false,
-      },
-    ];
+  async created() {
+    this.tasks = await this.fetchTasks();
   },
 };
 </script>
